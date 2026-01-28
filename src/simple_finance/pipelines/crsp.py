@@ -30,9 +30,6 @@ def get_crsp_msf_by_ids(
     """
     # --- Normalize date inputs ---
     
-    #Debug
-    print("Updated!")
-    
     con = db.connection
     # unwrap SQLAlchemy Connection -> ConnectionFairy (has cursor)
     if hasattr(con, "connection"):
