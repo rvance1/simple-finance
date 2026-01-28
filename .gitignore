@@ -11,6 +11,8 @@ wheels/
 env/
 venv/
 
+.env
+
 # Other
 dev/
 testing/
