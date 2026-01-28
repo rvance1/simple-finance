@@ -2,4 +2,4 @@
 
 ## Install
 ```bash
-pip install your-package-name
+pip install simple-finance
