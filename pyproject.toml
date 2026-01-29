@@ -5,21 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "simple-finance"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Python toolkit for loading financial data and performing regression and portfolio analysis for teaching and research."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [{ name = "Brian Boyer" }]
 dependencies = [
-    "pandas>=2.3.3",
+    "pandas>=2.2,<2.3",
     "requests>=2.32.5",
     "statsmodels>=0.14.5",
     "yfinance>=0.2.66",
 ]
 
 [project.urls]
-Homepage = "https://github.com/<your-username>/simple-finance"
-Issues = "https://github.com/<your-username>/simple-finance/issues"
+Homepage = "https://github.com/rvance1/simple-finance"
+Issues = "https://github.com/rvance1/simple-finance/issues"
 
 [project.optional-dependencies]
 dev = [
