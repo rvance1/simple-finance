@@ -1,6 +1,14 @@
 import pandas as pd
 from typing import Iterable, List, Union
 
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="pandas only supports SQLAlchemy connectable.*",
+    category=UserWarning,
+)
+
 
 def get_crsp_msf_by_ids(
     db,
@@ -30,12 +38,11 @@ def get_crsp_msf_by_ids(
     """
     # --- Normalize date inputs ---
     
-    engine = db.engine
     
-    #con = db.connection
+    con = db.connection
     # unwrap SQLAlchemy Connection -> ConnectionFairy (has cursor)
-    #if hasattr(con, "connection"):
-    #    con = con.connection
+    if hasattr(con, "connection"):
+        con = con.connection
     
     try:
         start = pd.Period(start_date, freq="M").to_timestamp(how="start")
@@ -106,7 +113,7 @@ def get_crsp_msf_by_ids(
             id_str = ",".join(str(x) for x in sub)
             where_ids = f" AND a.permno IN ({id_str})"
         else:
-            # quoted text IN list
+            # quoted text IN listß
             id_str = ",".join(f"'{x}'" for x in sub)
             where_ids = f" AND b.ticker IN ({id_str})"
 
