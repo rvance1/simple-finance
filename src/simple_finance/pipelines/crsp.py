@@ -30,10 +30,12 @@ def get_crsp_msf_by_ids(
     """
     # --- Normalize date inputs ---
     
-    con = db.connection
+    engine = db.engine
+    
+    #con = db.connection
     # unwrap SQLAlchemy Connection -> ConnectionFairy (has cursor)
-    if hasattr(con, "connection"):
-        con = con.connection
+    #if hasattr(con, "connection"):
+    #    con = con.connection
     
     try:
         start = pd.Period(start_date, freq="M").to_timestamp(how="start")
