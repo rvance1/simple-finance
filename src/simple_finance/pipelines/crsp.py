@@ -1,15 +1,6 @@
 import pandas as pd
 from typing import Iterable, List, Union
 
-import warnings
-
-warnings.filterwarnings(
-    "ignore",
-    message="pandas only supports SQLAlchemy connectable.*",
-    category=UserWarning,
-)
-
-
 def get_crsp_msf_by_ids(
     db,
     identifiers: Iterable[Union[str, int]],

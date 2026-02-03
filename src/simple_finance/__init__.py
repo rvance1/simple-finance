@@ -7,6 +7,13 @@ from .tools.black_scholes import black_scholes, implied_volatility
 from .tools.portfolio_tools import describe, portfolio_volatility, portfolio_sharpe, EFRS_portfolio, tangent_portfolio
 
 import pandas as pd
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="pandas only supports SQLAlchemy connectable.*",
+    category=UserWarning,
+)
 
 pd.set_option('display.max_rows', None)  # Show all rows
 pd.set_option('display.max_columns', None)  # Show all columns
