@@ -1,7 +1,6 @@
 import pandas as pd
 from typing import Iterable, List, Union
 
-
 def get_crsp_msf_by_ids(
     db,
     identifiers: Iterable[Union[str, int]],
@@ -28,13 +27,13 @@ def get_crsp_msf_by_ids(
     pandas.DataFrame
         Columns: date, permno, ticker, comnam, shrcd, exchcd, siccd, prc, ret, retx, vol, shrout
     """
-    # --- Normalize date inputs ---
     
+    # Establish the connection object
     con = db.connection
-    # unwrap SQLAlchemy Connection -> ConnectionFairy (has cursor)
     if hasattr(con, "connection"):
         con = con.connection
     
+    # Cleaning inputs
     try:
         start = pd.Period(start_date, freq="M").to_timestamp(how="start")
         end = pd.Period(end_date, freq="M").to_timestamp(how="end")
