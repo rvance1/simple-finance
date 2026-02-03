@@ -118,5 +118,4 @@ def get_crsp_msf_by_ids(
         out.index = pd.PeriodIndex(out["date"], freq="M", name="date")
         out = out.drop(columns=["date"])
 
-    print("debug!")
     return out
