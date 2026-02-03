@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Brian Boyer" }, { name = "Royston Vance" }]
 dependencies = [
     "pandas>=2.2,<2.3",
-    "requests>=2.32.5",
+    "requests>=2.32.4",
     "statsmodels>=0.14.5",
     "yfinance>=0.2.66",
 ]
