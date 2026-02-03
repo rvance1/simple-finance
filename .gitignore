@@ -11,6 +11,7 @@ wheels/
 env/
 venv/
 .venv-test/
+.venv-nb/
 
 .env
 
