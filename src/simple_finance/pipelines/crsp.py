@@ -113,8 +113,10 @@ def get_crsp_msf_by_ids(
     out = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
     # Optional: sort the result
     if not out.empty:
-        out = out.sort_values(["permno", "date"]).reset_index(drop=True)
-        out['date'] = pd.to_datetime(out['date'])  # ensure that date is a datetime object
-        out['date'] = out['date'].dt.to_period("M")
-        out = out.set_index('date')
+        out = out.sort_values(["permno", "date"]).reset_index(drop=True).copy()
+        out.loc[:, "date"] = pd.to_datetime(out["date"]).dt.to_period("M")
+        out.index = pd.PeriodIndex(out["date"], freq="M", name="date")
+        out = out.drop(columns=["date"])
+
+    print("debug!")
     return out
