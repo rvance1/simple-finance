@@ -9,7 +9,7 @@ description = "A Python toolkit for loading financial data and performing regres
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "Brian Boyer" }]
+authors = [{ name = "Brian Boyer" }, { name = "Royston Vance" }]
 dependencies = [
     "pandas>=2.2,<2.3",
     "requests>=2.32.5",
