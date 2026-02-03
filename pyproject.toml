@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simple-finance"
-version = "0.1.0"
+version = "0.1.2"
 description = "A Python toolkit for loading financial data and performing regression and portfolio analysis for teaching and research."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "Brian Boyer" }]
+authors = [{ name = "Brian Boyer" }, { name = "Royston Vance" }]
 dependencies = [
     "pandas>=2.2,<2.3",
-    "requests>=2.32.5",
+    "requests>=2.32.4",
     "statsmodels>=0.14.5",
     "yfinance>=0.2.66",
 ]
