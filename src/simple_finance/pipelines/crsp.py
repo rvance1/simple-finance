@@ -27,14 +27,13 @@ def get_crsp_msf_by_ids(
     pandas.DataFrame
         Columns: date, permno, ticker, comnam, shrcd, exchcd, siccd, prc, ret, retx, vol, shrout
     """
-    # --- Normalize date inputs ---
     
-    
+    # Establish the connection object
     con = db.connection
-    # unwrap SQLAlchemy Connection -> ConnectionFairy (has cursor)
     if hasattr(con, "connection"):
         con = con.connection
     
+    # Cleaning inputs
     try:
         start = pd.Period(start_date, freq="M").to_timestamp(how="start")
         end = pd.Period(end_date, freq="M").to_timestamp(how="end")
@@ -104,7 +103,7 @@ def get_crsp_msf_by_ids(
             id_str = ",".join(str(x) for x in sub)
             where_ids = f" AND a.permno IN ({id_str})"
         else:
-            # quoted text IN listß
+            # quoted text IN list
             id_str = ",".join(f"'{x}'" for x in sub)
             where_ids = f" AND b.ticker IN ({id_str})"
 
