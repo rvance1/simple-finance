@@ -5,6 +5,7 @@ from .pipelines.yahoo_finance import get_monthly_returns
 
 from .tools.black_scholes import black_scholes, implied_volatility
 from .tools.portfolio_tools import describe, portfolio_volatility, portfolio_sharpe, EFRS_portfolio, tangent_portfolio
+from .tools.stats_tools import intercept, slope, run_ols
 
 import pandas as pd
 import warnings
@@ -35,5 +36,8 @@ __all__ = [
     "portfolio_volatility",
     "portfolio_sharpe",
     "EFRS_portfolio",
-    "tangent_portfolio"
+    "tangent_portfolio",
+    "intercept",
+    "slope",
+    "run_ols"
 ]
