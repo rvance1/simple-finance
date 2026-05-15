@@ -21,7 +21,7 @@ pd.set_option('display.max_columns', None)  # Show all columns
 pd.set_option('display.width', None)  # Adjust width to fit the output
 pd.set_option('display.max_colwidth', None)  # Show full column content without truncation
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 __all__ = [
     "format_alpha_vantage",
