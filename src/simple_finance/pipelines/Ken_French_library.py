@@ -99,6 +99,15 @@ def get_ff3(start_date=None, end_date=None):
 
 def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, factors=None):
 
+    if stype == 'list':
+        strategies = ['accruals', 'beta', 'booktomarket', 'dividendyield', 'earningsprice', 'idiosyncraticvariance', 'investment',
+            'momentum', 'netissuances', 'profitability', 'shorttermreversal', 'size', 'variance']
+
+        if stype == 'list':
+            for s in strategies:
+                print(s)
+            return
+
     if stype == 'beta':
 
         # Make the request using the session
@@ -376,8 +385,463 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
             print()
             print(f"Min Date: {min_date}, Max Date: {max_date}")
 
+    #------------------------------------------
+    elif stype == 'investment':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_INV_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_INV.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=17, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Firm Investment")
+            print("--------------------------------")
+
+            print("Investment is the change in total assets from the fiscal year ending in year t-2 to the fiscal year")
+            print("ending in t-1, divided by t-2 total assets. Deciles are formed using NYSE breakpoints.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+    #------------------------------------------
+    elif stype == 'netissuances':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_NI_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_NI.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Net Share Issuances")
+            print("--------------------------------")
+
+            print("Decile ortfolios are formed on Net Share Issues (NI) at the end of each June using NYSE breakpoints.")
+            print("NI for June of year t is the change in the natural log of split-adjusted shares outstanding from the")
+            print("fiscal yearend in t-2 to the fiscal yearend in t-1.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+    #------------------------------------------
+    elif stype == 'booktomarket':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_BE-ME_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_BE-ME.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=23, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weight Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Book-to-Market Deciles")
+            print("--------------------------------")
+
+            print("Decile portfolios are formed on BE/ME at the end of each June using NYSE breakpoints. The BE used in")
+            print("June of year t is the book equity for the last fiscal year end in t-1. ME is price times shares")
+            print("outstanding at the end of December of t-1.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+    #------------------------------------------
+    elif stype == 'size':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_ME_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_ME.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=12, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Size Deciles")
+            print("--------------------------------")
+            print("Decile portfolios are constructed at the end of each June using the June market equity and ")
+            print("NYSE breakpoints.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+ #-----------------------------------------
+    elif stype == 'earningsprice':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_E-P_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_E-P.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=17, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weight Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Earnings-Price Deciles")
+            print("--------------------------------")
+
+            print("Decile portfolios are formed on E/P at the end of each June using NYSE breakpoints. The")
+            print("earnings used in June of year t are total earnings before extraordinary items for the last")
+            print("fiscal year end in t-1. P (actually ME) is price times shares outstanding at the end of")
+            print("December of t-1.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+#---------------------------------
+    elif stype == 'dividendyield':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_D-P_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_D-P.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=19, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weight Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Dividend-Yield Deciles")
+            print("--------------------------------")
+
+            print("Portfolios are formed on D/P at the end of each June using NYSE breakpoints. The dividend")
+            print("yield used to form portfolios in June of year t is the total dividends paid from July of")
+            print("year t-1 to June of year t per dollar of equity in June of t.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+#-----------------------------------
+    elif stype == 'variance':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_VAR_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_VAR.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Variance Deciles")
+            print("--------------------------------")
+
+            print("Decile portfolios are formed monthly on the variance of daily returns (Var) using NYSE ")
+            print("breakpoints. Var is estimated using 60 days (minimum 20) of lagged returns.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+#-------------------------------------------
+    elif stype == 'idiosyncraticvariance':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_RESVAR_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_RESVAR.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Idiosyncratic Variance Deciles")
+            print("--------------------------------")
+
+            print("The portfolios are formed monthly on the variance of the residuals from the FF ")
+            print("three-factor model (RVar) using NYSE breakpoints. RVar is estimated using 60 days")
+            print("(minimum 20) of lagged returns.")
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
+
+
     else:
-        raise ValueError("Invalid strategy type. Choose 'beta', 'momentum', or 'shortermreversal'.")
+        raise ValueError("Invalid strategy type. Choose 'accruals', 'beta', 'booktomarket', 'dividendyield',"
+                         "'earningsprice','idiosyncraticvariance', 'investment', 'momentum', 'netissuances', "
+                         "profitability, 'shorttermreversal', 'size', or 'variance'.")
 
     #------------------------------------------
     # Apply date range filtering if provided
