@@ -1,7 +1,7 @@
 import pandas as pd
 import yfinance as yf
 
-from .dartmouth import get_ff3
+from .Ken_French_library import get_ff3
 
 def get_monthly_returns(tickers, start_date, end_date, tbill_return=True):
     """

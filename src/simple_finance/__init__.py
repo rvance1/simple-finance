@@ -1,6 +1,6 @@
 from .pipelines.alpha_vantage import format_alpha_vantage
 from .pipelines.crsp import get_crsp_msf_by_ids
-from .pipelines.dartmouth import get_ff3, get_ff5, get_ff_strategies
+from .pipelines.Ken_French_library import get_ff3, get_ff5, get_ff_strategies
 from .pipelines.yahoo_finance import get_monthly_returns
 
 from .tools.black_scholes import black_scholes, implied_volatility
