@@ -390,7 +390,7 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
     if factors=='FF5':
         ff5=get_ff5()
         ff5.rename(columns={'Mkt-RF':'mkt-rf', 'SMB':'smb', 'HML':'hml', 'RMW': 'rmw', 'CMA': 'cma', 'RF':'rf'}, inplace=True)
-        dat_final = pd.merge(dat3, ff5[['mkt-rf', 'smb', 'hml', 'smb', 'cma', 'rf']], left_index=True, right_index=True, how='inner')
+        dat_final = pd.merge(dat3, ff5[['mkt-rf', 'smb', 'hml', 'rmw', 'cma', 'rf']], left_index=True, right_index=True, how='inner')
     elif factors=='FF3':
         ff3 = get_ff3()
         ff3.rename(columns={'Mkt-RF': 'mkt-rf', 'SMB': 'smb', 'HML': 'hml', 'RF': 'rf'}, inplace=True)
