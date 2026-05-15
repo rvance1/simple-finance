@@ -1,6 +1,6 @@
 from .pipelines.alpha_vantage import format_alpha_vantage
 from .pipelines.crsp import get_crsp_msf_by_ids
-from .pipelines.Ken_French_library import get_ff3, get_ff5, get_ff_strategies
+from .pipelines.Ken_French_library import get_ff3, get_ff5, get_ken_french_deciles
 from .pipelines.yahoo_finance import get_monthly_returns
 
 from .tools.black_scholes import black_scholes, implied_volatility
@@ -21,14 +21,14 @@ pd.set_option('display.max_columns', None)  # Show all columns
 pd.set_option('display.width', None)  # Adjust width to fit the output
 pd.set_option('display.max_colwidth', None)  # Show full column content without truncation
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 __all__ = [
     "format_alpha_vantage",
     "get_crsp_msf_by_ids",
     "get_ff3",
     "get_ff5",
-    "get_ff_strategies",
+    "get_ken_french_deciles",
     "get_monthly_returns",
     "black_scholes",
     "implied_volatility",

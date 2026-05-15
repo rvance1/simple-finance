@@ -97,7 +97,7 @@ def get_ff3(start_date=None, end_date=None):
 
     return ff3_2
 
-def get_ff_strategies(stype, start_date=None, end_date=None, details=None, factors=None):
+def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, factors=None):
 
     if stype == 'beta':
 
@@ -319,6 +319,63 @@ def get_ff_strategies(stype, start_date=None, end_date=None, details=None, facto
             print()
             print(f"Min Date: {min_date}, Max Date: {max_date}")
 
+
+    #------------------------------------------
+    elif stype == 'profitability':
+
+        # Make the request using the session
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_OP_csv.zip"
+
+        response = requests.get(url)
+
+        # Read the content of the file
+        zip_content = response.content
+
+        # Open the zip file from the content
+        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+            with zf.open('Portfolios_Formed_on_OP.csv') as f:
+                # Read the CSV file content (you can load it into pandas or process as needed)
+                dat = pd.read_csv(f, skiprows=24, header=0, encoding='utf-8', skipfooter=5, engine='python')
+
+        start_index = dat[dat.iloc[:, 0].str.contains("Equal Weighted Returns -- Monthly", na=False)].index[0]
+        dat1 = dat.iloc[:start_index]
+        dat2 = dat1.copy()
+        dat2.rename(columns={'Unnamed: 0': 'date'}, inplace=True)
+
+        # Convert first column to Period
+        dat2['date'] = pd.to_datetime(dat2['date'].astype(str), format='%Y%m').dt.to_period()
+
+        # Convert all columns except 'date' to numeric types
+        for col in dat2.columns[1:]:  # Skip the 'date' column
+            dat2[col] = pd.to_numeric(dat2[col], errors='coerce')
+
+        dat2.iloc[:, 1:] = dat2.iloc[:, 1:] * 0.01
+
+        # reset the index
+        dat2.set_index('date', inplace=True)
+
+        dat2.rename(columns={'Lo 10': 'Dec 1', 'Hi 10': 'Dec 10'}, inplace=True)
+        dat2.rename(columns={'2-Dec': 'Dec 2', '3-Dec': 'Dec 3', '4-Dec': 'Dec 4', '5-Dec': 'Dec 5', '6-Dec': 'Dec 6', '7-Dec': 'Dec 7', '8-Dec': 'Dec 8', '9-Dec': 'Dec 9'}, inplace=True)
+
+        cols = ['Dec 1', 'Dec 2', 'Dec 3', 'Dec 4', 'Dec 5',
+                'Dec 6', 'Dec 7', 'Dec 8', 'Dec 9', 'Dec 10']
+
+        dat3 = dat2[cols].copy()  # Select relevant columns
+        dat3.index = dat2.index  # Keep the index (assumed to be a PeriodIndex)
+        if details is True:
+            print("--------------------------------")
+            print("Operating Profitability Strategy")
+            print("--------------------------------")
+            print("The portfolios are formed on profitability (OP) at the end of each June using NYSE breakpoints.")
+            print("OP for June of year t is annual revenues minus cost of goods sold, interest expense, and selling,")
+            print("general, and administrative expenses divided by book equity for the last fiscal year end in t-1.")
+
+
+            min_date = dat3.index.min()
+            max_date = dat3.index.max()
+            print()
+            print(f"Min Date: {min_date}, Max Date: {max_date}")
+
     else:
         raise ValueError("Invalid strategy type. Choose 'beta', 'momentum', or 'shortermreversal'.")
 
@@ -334,10 +391,14 @@ def get_ff_strategies(stype, start_date=None, end_date=None, details=None, facto
         ff5=get_ff5()
         ff5.rename(columns={'Mkt-RF':'mkt-rf', 'SMB':'smb', 'HML':'hml', 'RMW': 'rmw', 'CMA': 'cma', 'RF':'rf'}, inplace=True)
         dat_final = pd.merge(dat3, ff5[['mkt-rf', 'smb', 'hml', 'smb', 'cma', 'rf']], left_index=True, right_index=True, how='inner')
+    elif factors=='FF3':
+        ff3 = get_ff3()
+        ff3.rename(columns={'Mkt-RF': 'mkt-rf', 'SMB': 'smb', 'HML': 'hml', 'RF': 'rf'}, inplace=True)
+        dat_final = pd.merge(dat3, ff3[['mkt-rf', 'smb', 'hml', 'rf']], left_index=True, right_index=True, how='inner')
     else:
         ff3=get_ff3()
         ff3.rename(columns={'Mkt-RF':'mkt-rf', 'SMB':'smb', 'HML':'hml', 'RF':'rf'},inplace=True)
-        dat_final=pd.merge(dat3,ff3[['mkt-rf','smb','hml','rf']],left_index=True,right_index=True,how='inner')
+        dat_final=pd.merge(dat3,ff3[['mkt-rf','rf']],left_index=True,right_index=True,how='inner')
 
     return dat_final
 
