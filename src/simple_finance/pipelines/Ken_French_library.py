@@ -2,6 +2,8 @@ import pandas as pd
 import io
 import zipfile
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 def get_ff5(start_date=None, end_date=None):
     """
@@ -10,7 +12,15 @@ def get_ff5(start_date=None, end_date=None):
     """
 
     url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
-    r = requests.get(url)
+
+    session = requests.Session()
+
+    retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+
+    r = session.get(url, timeout=60)
     r.raise_for_status()
 
     with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
@@ -61,13 +71,18 @@ def get_ff3(start_date=None, end_date=None):
     """
 
     url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
-    response = requests.get(url)
+    session = requests.Session()
 
-    # Read the content of the file
-    zip_content = response.content
+    retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+
+    r = session.get(url, timeout=60)
+    r.raise_for_status()
 
     # Open the zip file from the content
-    with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
         with zf.open('F-F_Research_Data_Factors.csv') as f:
             # Read the CSV file content (you can load it into pandas or process as needed)
             ff_three_factors = pd.read_csv(f, skiprows=3)
@@ -103,22 +118,26 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         strategies = ['accruals', 'beta', 'booktomarket', 'dividendyield', 'earningsprice', 'idiosyncraticvariance', 'investment',
             'momentum', 'netissuances', 'profitability', 'shorttermreversal', 'size', 'variance']
 
-        if stype == 'list':
-            for s in strategies:
-                print(s)
-            return
+        for s in strategies:
+            print(s)
+        return
 
-    if stype == 'beta':
+    elif stype == 'beta':
 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_BETA_csv.zip"
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_BETA.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=15, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -171,13 +190,19 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/10_Portfolios_Prior_12_2_csv.zip"
-        response = requests.get(url)
 
-        # Read the content of the file
-        zip_content = response.content
+        session = requests.Session()
+
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('10_Portfolios_Prior_12_2.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=10, header=0)
@@ -226,16 +251,19 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/10_Portfolios_Prior_1_0_csv.zip"
-        response = requests.get(url)
 
-        # Read the content of the file
-        zip_content = response.content
+        session = requests.Session()
 
-        # Read the content of the file
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
 
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('10_Portfolios_Prior_1_0.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=10, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -281,13 +309,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_AC_csv.zip"
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_AC.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=17, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -335,13 +368,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_OP_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_OP.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=24, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -391,13 +429,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_INV_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_INV.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=17, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -447,13 +490,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_NI_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_NI.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -504,13 +552,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_BE-ME_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_BE-ME.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=23, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -561,13 +614,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_ME_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_ME.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=12, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -615,13 +673,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_E-P_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_E-P.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=17, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -672,13 +735,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_D-P_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_D-P.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=19, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -729,13 +797,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_VAR_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_VAR.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')
@@ -785,13 +858,18 @@ def get_ken_french_deciles(stype, start_date=None, end_date=None, details=None, 
         # Make the request using the session
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Portfolios_Formed_on_RESVAR_csv.zip"
 
-        response = requests.get(url)
+        session = requests.Session()
 
-        # Read the content of the file
-        zip_content = response.content
+        retry = Retry(total=5, connect=5, read=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["GET"])
+
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+
+        r = session.get(url, timeout=60)
+        r.raise_for_status()
 
         # Open the zip file from the content
-        with zipfile.ZipFile(io.BytesIO(zip_content)) as zf:
+        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             with zf.open('Portfolios_Formed_on_RESVAR.csv') as f:
                 # Read the CSV file content (you can load it into pandas or process as needed)
                 dat = pd.read_csv(f, skiprows=16, header=0, encoding='utf-8', skipfooter=5, engine='python')

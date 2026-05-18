@@ -6,6 +6,7 @@ from .pipelines.yahoo_finance import get_monthly_returns
 from .tools.black_scholes import black_scholes, implied_volatility
 from .tools.portfolio_tools import describe, portfolio_volatility, portfolio_sharpe, EFRS_portfolio, tangent_portfolio
 from .tools.stats_tools import intercept, slope, run_ols
+from importlib.metadata import version
 
 import pandas as pd
 import warnings
@@ -21,7 +22,7 @@ pd.set_option('display.max_columns', None)  # Show all columns
 pd.set_option('display.width', None)  # Adjust width to fit the output
 pd.set_option('display.max_colwidth', None)  # Show full column content without truncation
 
-__version__ = "0.1.6"
+__version__ = version("simple-finance")
 
 __all__ = [
     "format_alpha_vantage",
