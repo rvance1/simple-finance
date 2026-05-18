@@ -3,7 +3,7 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "simple-finance"
+name = "finstrata"
 version = "0.1.14"
 description = "A Python toolkit for loading financial data and performing regression and portfolio analysis for teaching and research."
 readme = "README.md"
