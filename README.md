@@ -1,4 +1,4 @@
-# simple-finance
+# farms
 
 ## Install
 ```bash
