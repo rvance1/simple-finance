@@ -2,4 +2,4 @@
 
 ## Install
 ```bash
-pip install simple-finance
+pip install farms
