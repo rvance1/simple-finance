@@ -1,8 +1,30 @@
+"""Unit tests for the Ken French data helpers.
+
+These tests use small, artificial DataFrames instead of downloading live data.
+The pytest ``monkeypatch`` fixture temporarily replaces download functions with
+local fakes, which keeps the suite fast, repeatable, and usable offline.
+
+Run this file from the repository root with::
+
+    python -m pytest tests/test_ken_french_library.py -v
+
+Useful pytest features demonstrated here:
+
+* ``monkeypatch`` replaces a function only for the duration of one test.
+* ``capsys`` captures printed output so that it can be checked.
+* ``pytest.approx`` safely compares floating-point values.
+* ``pytest.raises`` verifies that invalid input produces a helpful exception.
+* ``pytest.mark.parametrize`` runs one test with several inputs.
+"""
+
 import pandas as pd
 import pytest
 
 from farms.pipelines import Ken_French_library as french
+
+
 def test_load_french_dataset_forwards_reader_arguments(monkeypatch):
+    """The low-level loader should pass its arguments to pandas-datareader."""
     expected = {0: "table", "DESCR": "description"}
     calls = []
 
@@ -30,6 +52,7 @@ def test_load_french_dataset_forwards_reader_arguments(monkeypatch):
 
 
 def test_load_french_dataset_defaults_to_full_history(monkeypatch):
+    """An omitted start date should request all available historical data."""
     calls = []
 
     def fake_data_reader(dataset, source, start=None, end=None):
@@ -44,6 +67,7 @@ def test_load_french_dataset_defaults_to_full_history(monkeypatch):
 
 
 def test_decile_registry_contains_all_supported_strategies():
+    """The registry should contain every public strategy in a uniform format."""
     assert set(french._DECILE_DATASETS) == {
         "accruals",
         "beta",
@@ -69,6 +93,7 @@ def test_decile_registry_contains_all_supported_strategies():
 
 
 def test_inspect_french_dataset_summarizes_dataframes(monkeypatch):
+    """Dataset inspection should describe every returned DataFrame table."""
     monthly = pd.DataFrame(
         {"Lo 10": [1.0], "Hi 10": [2.0]},
         index=pd.period_range("2020-01", periods=1, freq="M"),
@@ -109,16 +134,18 @@ def test_inspect_french_dataset_summarizes_dataframes(monkeypatch):
 
 @pytest.mark.parametrize("strategy", sorted(french._DECILE_DATASETS))
 def test_load_decile_returns_normalizes_registered_strategy(monkeypatch, strategy):
+    """Each strategy should produce ten consistently named decimal returns."""
     prefix_columns = {
         "Lo 20": [90.0, 91.0],
         "Qnt 2": [92.0, 93.0],
     }
     decile_columns = {
-        f"source {number}": [float(number), float(number + 10)]
-        for number in range(1, 11)
+        "Lo 10": [1.0, 11.0],
+        **{f"Dec {number}": [float(number), float(number + 10)] for number in range(2, 10)},
+        "Hi 10": [10.0, 20.0],
     }
     source = pd.DataFrame(
-        prefix_columns | decile_columns,
+        prefix_columns | decile_columns | {"not a decile": [99.0, 99.0]},
         index=pd.period_range("2020-01", "2020-02", freq="M"),
     )
     calls = []
@@ -141,11 +168,13 @@ def test_load_decile_returns_normalizes_registered_strategy(monkeypatch, strateg
 
 
 def test_load_decile_returns_rejects_unknown_strategy():
+    """The internal loader should explain when a strategy is unsupported."""
     with pytest.raises(ValueError, match="Unknown decile strategy 'unknown'"):
         french._load_decile_returns("unknown")
 
 
 def test_get_ff3_returns_monthly_decimal_factors(monkeypatch):
+    """FF3 should return monthly factors converted from percentages to decimals."""
     source = pd.DataFrame(
         {
             "Mkt-RF": [2.00, -1.00],
@@ -175,6 +204,7 @@ def test_get_ff3_returns_monthly_decimal_factors(monkeypatch):
 
 
 def test_get_ff5_filters_dates_and_returns_decimal_factors(monkeypatch):
+    """FF5 should request the selected dates and return decimal factor values."""
     source = pd.DataFrame(
         {
             "Mkt-RF": [-1.00],
@@ -206,6 +236,7 @@ def test_get_ff5_filters_dates_and_returns_decimal_factors(monkeypatch):
 
 
 def test_get_ff3d_returns_filtered_daily_decimal_factors(monkeypatch):
+    """Daily FF3 data should use calendar timestamps and decimal values."""
     source = pd.DataFrame(
         {
             "Mkt-RF": [-2.00],
@@ -237,7 +268,45 @@ def test_get_ff3d_returns_filtered_daily_decimal_factors(monkeypatch):
     assert result.iloc[0]["RF"] == pytest.approx(0.0001)
 
 
+def test_get_ff5d_returns_filtered_daily_decimal_factors(monkeypatch):
+    """Daily FF5 data should use calendar timestamps and decimal values."""
+    source = pd.DataFrame(
+        {
+            "Mkt-RF": [-2.00],
+            "SMB": [0.25],
+            "HML": [0.50],
+            "RMW": [-0.10],
+            "CMA": [0.30],
+            "RF": [0.01],
+        },
+        index=pd.period_range("2020-01-03", "2020-01-03", freq="D"),
+    )
+    calls = []
+
+    def fake_loader(dataset, start_date=None, end_date=None):
+        calls.append((dataset, start_date, end_date))
+        return {0: source}
+
+    monkeypatch.setattr(french, "_load_french_dataset", fake_loader)
+
+    result = french.get_ff5d("2020-01-03", "2020-01-03")
+
+    assert calls == [
+        ("F-F_Research_Data_5_Factors_2x3_daily", "2020-01-03", "2020-01-03")
+    ]
+    assert list(result.columns) == ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF"]
+    assert isinstance(result.index, pd.DatetimeIndex)
+    assert result.index.freq is None
+    assert result.index.name == "date"
+    assert list(result.index) == [pd.Timestamp("2020-01-03")]
+    assert result.iloc[0]["Mkt-RF"] == pytest.approx(-0.02)
+    assert result.iloc[0]["RMW"] == pytest.approx(-0.001)
+    assert result.iloc[0]["CMA"] == pytest.approx(0.003)
+    assert result.iloc[0]["RF"] == pytest.approx(0.0001)
+
+
 def _sample_deciles():
+    """Create one month of predictable decile returns for public-API tests."""
     return pd.DataFrame(
         {
             f"Dec {number}": [-0.02 + (number - 1) * 0.01]
@@ -247,7 +316,8 @@ def _sample_deciles():
     )
 
 
-def _sample_ff3():
+def _sample_ff3(start_date=None, end_date=None):
+    """Create one month of predictable FF3 returns for merge tests."""
     return pd.DataFrame(
         {
             "Mkt-RF": [-0.01],
@@ -259,7 +329,8 @@ def _sample_ff3():
     )
 
 
-def _sample_ff5():
+def _sample_ff5(start_date=None, end_date=None):
+    """Create one month of predictable FF5 returns for merge tests."""
     result = _sample_ff3()
     result["RMW"] = -0.001
     result["CMA"] = 0.003
@@ -268,6 +339,7 @@ def _sample_ff5():
 
 @pytest.mark.parametrize("strategy", sorted(french._DECILE_DATASETS))
 def test_public_decile_loader_supports_every_strategy(monkeypatch, strategy):
+    """The public loader should accept every strategy registered by the package."""
     calls = []
     deciles = _sample_deciles()
 
@@ -303,6 +375,7 @@ def test_public_decile_loader_supports_every_strategy(monkeypatch, strategy):
 def test_public_decile_loader_merges_requested_factors(
     monkeypatch, factors, expected_columns
 ):
+    """The public loader should merge the default, FF3, or FF5 factor set."""
     monkeypatch.setattr(
         french,
         "_load_decile_returns",
@@ -322,7 +395,47 @@ def test_public_decile_loader_merges_requested_factors(
     assert result.iloc[0]["mkt-rf"] == pytest.approx(-0.01)
 
 
+@pytest.mark.parametrize("factors", [None, "FF3", "FF5"])
+def test_public_decile_loader_forwards_dates_to_factor_loader(monkeypatch, factors):
+    calls = []
+    monkeypatch.setattr(
+        french,
+        "_load_decile_returns",
+        lambda strategy, start_date=None, end_date=None: _sample_deciles(),
+    )
+
+    def fake_ff3(start_date=None, end_date=None):
+        calls.append(("FF3", start_date, end_date))
+        return _sample_ff3()
+
+    def fake_ff5(start_date=None, end_date=None):
+        calls.append(("FF5", start_date, end_date))
+        return _sample_ff5()
+
+    monkeypatch.setattr(french, "get_ff3", fake_ff3)
+    monkeypatch.setattr(french, "get_ff5", fake_ff5)
+
+    french.get_ken_french_deciles(
+        "momentum", "2020-01", "2020-02", factors=factors
+    )
+
+    expected_loader = "FF5" if factors == "FF5" else "FF3"
+    assert calls == [(expected_loader, "2020-01", "2020-02")]
+
+
+def test_public_decile_loader_rejects_invalid_factor_selection(monkeypatch):
+    monkeypatch.setattr(
+        french,
+        "_load_decile_returns",
+        lambda strategy, start_date=None, end_date=None: _sample_deciles(),
+    )
+
+    with pytest.raises(ValueError, match="factors must be None, 'FF3', or 'FF5'"):
+        french.get_ken_french_deciles("momentum", factors="FF4")
+
+
 def test_public_decile_loader_lists_strategies_without_downloading(capsys):
+    """The special ``list`` request should print choices without loading data."""
     result = french.get_ken_french_deciles("list")
 
     assert result is None
@@ -330,6 +443,7 @@ def test_public_decile_loader_lists_strategies_without_downloading(capsys):
 
 
 def test_public_decile_loader_prints_teaching_details(monkeypatch, capsys):
+    """The details option should print the strategy's teaching notes and dates."""
     monkeypatch.setattr(
         french,
         "_load_decile_returns",
@@ -346,6 +460,7 @@ def test_public_decile_loader_prints_teaching_details(monkeypatch, capsys):
 
 
 def test_get_decile_metadata_returns_structured_information():
+    """Metadata should be returned in a predictable, reusable dictionary."""
     metadata = french._get_decile_metadata("momentum", _sample_deciles())
 
     assert metadata == {
@@ -360,6 +475,7 @@ def test_get_decile_metadata_returns_structured_information():
 
 
 def test_print_decile_details_displays_structured_metadata(capsys):
+    """The display helper should print structured metadata for a student."""
     metadata = french._get_decile_metadata("momentum", _sample_deciles())
 
     result = french._print_decile_details(metadata)
@@ -372,5 +488,6 @@ def test_print_decile_details_displays_structured_metadata(capsys):
 
 
 def test_public_decile_loader_rejects_unknown_strategy():
+    """The public loader should report unsupported strategies clearly."""
     with pytest.raises(ValueError, match="Unknown decile strategy 'unknown'"):
         french.get_ken_french_deciles("unknown")

@@ -4,6 +4,7 @@ from .pipelines.Ken_French_library import (
     get_ff3,
     get_ff5,
     get_ff3d,
+    get_ff5d,
     get_ken_french_deciles,
 )
 
@@ -34,6 +35,7 @@ __all__ = [
     "get_ff3",
     "get_ff3d",
     "get_ff5",
+    "get_ff5d",
     "get_ken_french_deciles",
     "black_scholes",
     "implied_volatility",

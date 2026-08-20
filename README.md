@@ -21,6 +21,64 @@ python -m pip install -e .
 
 The data-loading functions require an internet connection when called.
 
+## Alpha Vantage monthly adjusted prices
+
+`format_alpha_vantage` formats a response from Alpha Vantage's
+`TIME_SERIES_MONTHLY_ADJUSTED` endpoint. Obtain an API key from
+[Alpha Vantage](https://www.alphavantage.co/support/#api-key) before making a
+request.
+
+### Inputs
+
+| Parameter | Required | Format and behavior |
+| --- | --- | --- |
+| `r` | Yes | A `requests.Response` from a successful `TIME_SERIES_MONTHLY_ADJUSTED` request. |
+| `start_date` | No | `YYYY-MM`; `None` leaves the lower date bound unbounded. |
+| `end_date` | No | `YYYY-MM`; `None` leaves the upper date bound unbounded. The range is inclusive. |
+
+Invalid, reversed, rate-limited, or malformed API responses raise clear
+exceptions.
+
+### Output
+
+Returns a DataFrame with a monthly `PeriodIndex` named `date`, sorted
+chronologically.
+
+| Column | Description |
+| --- | --- |
+| `Open`, `High`, `Low`, `Close` | Monthly price fields returned by Alpha Vantage. |
+| `Adjusted Close` | Split- and dividend-adjusted monthly closing price. |
+| `Volume` | Monthly trading volume. |
+| `Dividend Amount` | Dividend amount for the month. |
+
+All output columns are numeric.
+
+### Examples
+
+```python
+import os
+
+import farms
+import requests
+
+response = requests.get(
+    "https://www.alphavantage.co/query",
+    params={
+        "function": "TIME_SERIES_MONTHLY_ADJUSTED",
+        "symbol": "MSFT",
+        "apikey": os.environ["ALPHAVANTAGE_API_KEY"],
+    },
+    timeout=30,
+)
+
+monthly = farms.format_alpha_vantage(
+    response,
+    start_date="2020-01",
+    end_date="2020-12",
+)
+print(monthly.head())
+```
+
 ## CRSP monthly stock data (WRDS)
 
 `get_crsp_msf_by_ids` loads CRSP Monthly Stock File observations through a
@@ -31,6 +89,32 @@ not installed as a required `farms` dependency, so install it separately:
 ```bash
 python -m pip install wrds
 ```
+
+### Inputs
+
+| Parameter | Required | Format and behavior |
+| --- | --- | --- |
+| `db` | Yes | An open `wrds.Connection` or compatible database wrapper. |
+| `identifiers` | Yes | A list of PERMNOs or ticker strings. |
+| `start_date` | Yes | `YYYY-MM`; `None` is not supported. |
+| `end_date` | Yes | `YYYY-MM`; `None` is not supported. The range is inclusive. |
+| `identifier_type` | No | `"permno"` or `"ticker"`. Providing it is recommended to avoid ambiguity. |
+| `chunk_size` | No | Positive integer; defaults to `500`. |
+
+The date range refers to complete calendar months. For example,
+`start_date="2020-01"` and `end_date="2020-03"` returns observations from
+January through March 2020.
+
+### Output
+
+Returns a DataFrame with a monthly `PeriodIndex` named `date`, sorted
+chronologically. Columns include PERMNO, PERMCO, ticker, company/name-history
+fields, and CRSP price, return, volume, and shares-outstanding fields.
+`ret` and `retx` are decimal returns (`0.01` means 1%). `prc` follows the
+CRSP price sign convention, `vol` is trading volume, and `shrout` is reported
+by CRSP in thousands of shares.
+
+### Examples
 
 Query by PERMNO:
 
@@ -61,60 +145,11 @@ monthly = farms.get_crsp_msf_by_ids(
 db.close()
 ```
 
-Dates must use `YYYY-MM` and are inclusive. `identifier_type` may be omitted
-for a homogeneous list, but providing it is recommended to avoid ambiguity.
-The result has a monthly `PeriodIndex` named `date`; columns include PERMNO,
-PERMCO, ticker, company/name-history fields, and CRSP price, return, volume,
-and shares-outstanding fields.
-
-### Date range requirements
-
-`start_date` and `end_date` are required for CRSP queries and must both use
-the `YYYY-MM` format. `None` is not supported.
-
-The date range is inclusive and refers to complete calendar months. For
-example, `start_date="2020-01"` and `end_date="2020-03"` returns observations
-from January through March 2020. To request all available history for an
-identifier, provide the earliest and latest months appropriate for your
-research.
-
 ## Fama-French factors
 
-Use month-formatted dates (`YYYY-MM`) for monthly factor and decile data.
-For daily three-factor data (`get_ff3d`), use day-formatted dates
-(`YYYY-MM-DD`).
+### Inputs
 
-Monthly three-factor data:
-
-```python
-import farms
-
-ff3 = farms.get_ff3("2000-01", "2025-12")
-print(ff3.head())
-```
-
-The result contains `Mkt-RF`, `SMB`, `HML`, and `RF`.
-
-Monthly five-factor data:
-
-```python
-ff5 = farms.get_ff5("2000-01", "2025-12")
-print(ff5.head())
-```
-
-The result contains `Mkt-RF`, `SMB`, `HML`, `RMW`, `CMA`, and `RF`.
-
-Daily three-factor data:
-
-```python
-ff3_daily = farms.get_ff3d("2025-01-01", "2025-12-31")
-print(ff3_daily.head())
-```
-
-Monthly factor data use a pandas `PeriodIndex`. Daily factor data use a
-pandas `DatetimeIndex`.
-
-### Date ranges requirements
+For Fama-French factor loaders and Kenneth French decile portfolios,
 `start_date` and `end_date` are optional.
 
 - When `start_date=None`, the loader requests the full available history,
@@ -123,7 +158,24 @@ pandas `DatetimeIndex`.
   date available from the Kenneth French Data Library.
 - You may provide either bound independently.
 
-For example:
+Use month-formatted dates (`YYYY-MM`) for `get_ff3`, `get_ff5`, and decile
+data. For daily factor data (`get_ff3d` and `get_ff5d`), use day-formatted
+dates (`YYYY-MM-DD`).
+
+### Outputs
+
+All factor loaders return decimal returns (`0.01` means 1%) and an index named
+`date`. This differs from the Kenneth French source files, which report
+returns in percent.
+
+| Function | Frequency and index | Columns |
+| --- | --- | --- |
+| `get_ff3` | Monthly `PeriodIndex` | `Mkt-RF`, `SMB`, `HML`, `RF` |
+| `get_ff5` | Monthly `PeriodIndex` | `Mkt-RF`, `SMB`, `HML`, `RMW`, `CMA`, `RF` |
+| `get_ff3d` | Daily `DatetimeIndex` | `Mkt-RF`, `SMB`, `HML`, `RF` |
+| `get_ff5d` | Daily `DatetimeIndex` | `Mkt-RF`, `SMB`, `HML`, `RMW`, `CMA`, `RF` |
+
+### Examples
 
 ```python
 # Full available history through the latest available observation
@@ -139,7 +191,74 @@ momentum = farms.get_ken_french_deciles(
 )
 ```
 
-## Kenneth French decile portfolios
+Monthly three-factor data:
+
+```python
+import farms
+
+ff3 = farms.get_ff3("2000-01", "2025-12")
+print(ff3.head())
+```
+
+Monthly five-factor data:
+
+```python
+ff5 = farms.get_ff5("2000-01", "2025-12")
+print(ff5.head())
+```
+
+Daily three-factor data:
+
+```python
+ff3_daily = farms.get_ff3d("2025-01-01", "2025-12-31")
+print(ff3_daily.head())
+```
+
+Daily five-factor data:
+
+```python
+ff5_daily = farms.get_ff5d("2025-01-01", "2025-12-31")
+print(ff5_daily.head())
+```
+
+The daily five-factor result contains `Mkt-RF`, `SMB`, `HML`, `RMW`, `CMA`,
+and `RF`. Dates are optional; supplying only `start_date` retrieves observations
+from that date through the latest available observation:
+
+```python
+ff5_daily = farms.get_ff5d(start_date="2025-01-01")
+```
+
+Monthly factor data use a pandas `PeriodIndex`. Daily factor data use a
+pandas `DatetimeIndex`.
+
+## Kenneth French monthly decile portfolios
+
+### Inputs
+
+| Parameter | Required | Format and behavior |
+| --- | --- | --- |
+| `stype` | Yes | A supported strategy below, or `"list"` to print the supported strategies. |
+| `start_date` | No | `YYYY-MM`; `None` requests the full available history. |
+| `end_date` | No | `YYYY-MM`; `None` requests data through the latest available observation. |
+| `factors` | No | `None` (default), `"FF3"`, or `"FF5"`. |
+| `details` | No | Set to `True` to print the strategy title, construction details, and available dates. |
+
+### Output
+
+For a strategy, returns a DataFrame with a monthly `PeriodIndex` named `date`.
+It contains `Dec 1` through `Dec 10`, plus `mkt-rf` and `rf` by default.
+`factors="FF3"` adds `smb` and `hml`; `factors="FF5"` additionally adds
+`rmw` and `cma`. With `stype="list"`, the function prints the supported
+strategies and returns `None`.
+
+All portfolio-return and factor columns are decimal returns (`0.01` means 1%).
+
+With `details=True`, the function also prints the strategy title,
+portfolio-construction details, and the available date range. It still returns
+the same DataFrame.
+
+### Examples
 
 Display the available strategies:
 
@@ -174,9 +293,6 @@ momentum = farms.get_ken_french_deciles(
 print(momentum.head())
 ```
 
-Portfolio columns are named `Dec 1` through `Dec 10`. By default, the result
-also contains the market excess return (`mkt-rf`) and risk-free rate (`rf`).
-
 Add all three-factor columns:
 
 ```python
@@ -187,8 +303,6 @@ momentum_ff3 = farms.get_ken_french_deciles(
     factors="FF3",
 )
 ```
-
-This adds `mkt-rf`, `smb`, `hml`, and `rf`.
 
 Add all five-factor columns:
 
@@ -201,12 +315,7 @@ momentum_ff5 = farms.get_ken_french_deciles(
 )
 ```
 
-This adds `mkt-rf`, `smb`, `hml`, `rmw`, `cma`, and `rf`.
-
-### Teaching details
-
-Pass `details=True` to print a short explanation of the portfolio construction
-and the available date range. The function still returns the DataFrame.
+Print teaching details while retaining the returned DataFrame:
 
 ```python
 momentum = farms.get_ken_french_deciles(
@@ -216,41 +325,6 @@ momentum = farms.get_ken_french_deciles(
     details=True,
 )
 ```
-### Date ranges requirements
-`start_date` and `end_date` are optional.
-
-- When `start_date=None`, the loader requests the full available history,
-  beginning from `1900-01-01`.
-- When `end_date=None`, the loader requests observations through the latest
-  date available from the Kenneth French Data Library.
-- You may provide either bound independently.
-
-For example:
-
-```python
-# Full available history through the latest available observation
-ff3 = farms.get_ff3()
-
-# January 2000 through the latest available observation
-ff5 = farms.get_ff5(start_date="2000-01")
-
-# Earliest available history through December 2020
-momentum = farms.get_ken_french_deciles(
-    "momentum",
-    end_date="2020-12",
-)
-```
-
-
-## Return units
-
-All factor and portfolio returns are expressed as decimals:
-
-- `0.01` means 1%.
-- `-0.025` means -2.5%.
-
-This differs from the source files in the Kenneth French Data Library, which
-report returns in percent.
 
 ## Running tests
 

@@ -41,15 +41,17 @@ def get_crsp_msf_by_ids(
     identifier_type : {'permno', 'ticker'}, optional
         Explicitly select how to interpret ``identifiers``. When omitted, the
         type is inferred only from a homogeneous list of integers or strings.
-    start_date, end_date : 'YYYY-MM-DD'
-        Inclusive date range to filter `a.date`.
+    start_date, end_date : 'YYYY-MM'
+        Required, inclusive calendar-month range to filter `a.date`.
     chunk_size : int
         Max identifiers per SQL IN() chunk to avoid overly long queries.
 
     Returns
     -------
     pandas.DataFrame
-        Columns: date, permno, ticker, comnam, shrcd, exchcd, siccd, prc, ret, retx, vol, shrout
+        A chronologically sorted monthly PeriodIndex named ``date`` and columns:
+        permno, permco, ticker, comnam, shrcd, exchcd, siccd, prc, ret, retx,
+        vol, shrout.
     """
     
     # Establish the connection object
@@ -127,6 +129,10 @@ def get_crsp_msf_by_ids(
         # Basic sanity: forbid quotes to keep the simple IN (...) builder safe
         if any("'" in value or '"' in value for value in ids_list):
             raise ValueError("Tickers must not contain quotes.")
+
+    # Preserve the caller's first-seen order while avoiding duplicate queries
+    # and duplicate rows when repeated identifiers span multiple chunks.
+    ids_list = list(dict.fromkeys(ids_list))
 
     # Base SELECT/JOIN and date validity join to msenames
     base_sql = """
