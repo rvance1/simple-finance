@@ -17,4 +17,4 @@ venv/
 
 # Other
 dev/
-testing/
+testing/.idea/
