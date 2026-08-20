@@ -80,33 +80,6 @@ research.
 
 ## Fama-French factors
 
-### Date ranges for Fama–French factors and decile portfolios
-
-For Fama–French factor loaders and Kenneth French decile portfolios,
-`start_date` and `end_date` are optional.
-
-- When `start_date=None`, the loader requests the full available history,
-  beginning from `1900-01-01`.
-- When `end_date=None`, the loader requests observations through the latest
-  date available from the Kenneth French Data Library.
-- You may provide either bound independently.
-
-For example:
-
-```python
-# Full available history through the latest available observation
-ff3 = farms.get_ff3()
-
-# January 2000 through the latest available observation
-ff5 = farms.get_ff5(start_date="2000-01")
-
-# Earliest available history through December 2020
-momentum = farms.get_ken_french_deciles(
-    "momentum",
-    end_date="2020-12",
-)
-```
-
 Use month-formatted dates (`YYYY-MM`) for monthly factor and decile data.
 For daily three-factor data (`get_ff3d`), use day-formatted dates
 (`YYYY-MM-DD`).
@@ -140,6 +113,31 @@ print(ff3_daily.head())
 
 Monthly factor data use a pandas `PeriodIndex`. Daily factor data use a
 pandas `DatetimeIndex`.
+
+### Date ranges requirements
+`start_date` and `end_date` are optional.
+
+- When `start_date=None`, the loader requests the full available history,
+  beginning from `1900-01-01`.
+- When `end_date=None`, the loader requests observations through the latest
+  date available from the Kenneth French Data Library.
+- You may provide either bound independently.
+
+For example:
+
+```python
+# Full available history through the latest available observation
+ff3 = farms.get_ff3()
+
+# January 2000 through the latest available observation
+ff5 = farms.get_ff5(start_date="2000-01")
+
+# Earliest available history through December 2020
+momentum = farms.get_ken_french_deciles(
+    "momentum",
+    end_date="2020-12",
+)
+```
 
 ## Kenneth French decile portfolios
 
@@ -205,7 +203,7 @@ momentum_ff5 = farms.get_ken_french_deciles(
 
 This adds `mkt-rf`, `smb`, `hml`, `rmw`, `cma`, and `rf`.
 
-## Teaching details
+### Teaching details
 
 Pass `details=True` to print a short explanation of the portfolio construction
 and the available date range. The function still returns the DataFrame.
@@ -218,6 +216,31 @@ momentum = farms.get_ken_french_deciles(
     details=True,
 )
 ```
+### Date ranges requirements
+`start_date` and `end_date` are optional.
+
+- When `start_date=None`, the loader requests the full available history,
+  beginning from `1900-01-01`.
+- When `end_date=None`, the loader requests observations through the latest
+  date available from the Kenneth French Data Library.
+- You may provide either bound independently.
+
+For example:
+
+```python
+# Full available history through the latest available observation
+ff3 = farms.get_ff3()
+
+# January 2000 through the latest available observation
+ff5 = farms.get_ff5(start_date="2000-01")
+
+# Earliest available history through December 2020
+momentum = farms.get_ken_french_deciles(
+    "momentum",
+    end_date="2020-12",
+)
+```
+
 
 ## Return units
 
