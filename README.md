@@ -21,7 +21,95 @@ python -m pip install -e .
 
 The data-loading functions require an internet connection when called.
 
+## CRSP monthly stock data (WRDS)
+
+`get_crsp_msf_by_ids` loads CRSP Monthly Stock File observations through a
+caller-provided [WRDS](https://wrds-www.wharton.upenn.edu/) connection. You
+need a WRDS account with access to the CRSP data set. `wrds` is intentionally
+not installed as a required `farms` dependency, so install it separately:
+
+```bash
+python -m pip install wrds
+```
+
+Query by PERMNO:
+
+```python
+import farms
+import wrds
+
+db = wrds.Connection()
+monthly = farms.get_crsp_msf_by_ids(
+    db,
+    identifiers=[14593, 12079],
+    start_date="2020-01",
+    end_date="2020-12",
+    identifier_type="permno",
+)
+```
+
+Or query by ticker:
+
+```python
+monthly = farms.get_crsp_msf_by_ids(
+    db,
+    identifiers=["AAPL", "MSFT"],
+    start_date="2020-01",
+    end_date="2020-12",
+    identifier_type="ticker",
+)
+db.close()
+```
+
+Dates must use `YYYY-MM` and are inclusive. `identifier_type` may be omitted
+for a homogeneous list, but providing it is recommended to avoid ambiguity.
+The result has a monthly `PeriodIndex` named `date`; columns include PERMNO,
+PERMCO, ticker, company/name-history fields, and CRSP price, return, volume,
+and shares-outstanding fields.
+
+### Date range requirements
+
+`start_date` and `end_date` are required for CRSP queries and must both use
+the `YYYY-MM` format. `None` is not supported.
+
+The date range is inclusive and refers to complete calendar months. For
+example, `start_date="2020-01"` and `end_date="2020-03"` returns observations
+from January through March 2020. To request all available history for an
+identifier, provide the earliest and latest months appropriate for your
+research.
+
 ## Fama-French factors
+
+### Date ranges for Fama–French factors and decile portfolios
+
+For Fama–French factor loaders and Kenneth French decile portfolios,
+`start_date` and `end_date` are optional.
+
+- When `start_date=None`, the loader requests the full available history,
+  beginning from `1900-01-01`.
+- When `end_date=None`, the loader requests observations through the latest
+  date available from the Kenneth French Data Library.
+- You may provide either bound independently.
+
+For example:
+
+```python
+# Full available history through the latest available observation
+ff3 = farms.get_ff3()
+
+# January 2000 through the latest available observation
+ff5 = farms.get_ff5(start_date="2000-01")
+
+# Earliest available history through December 2020
+momentum = farms.get_ken_french_deciles(
+    "momentum",
+    end_date="2020-12",
+)
+```
+
+Use month-formatted dates (`YYYY-MM`) for monthly factor and decile data.
+For daily three-factor data (`get_ff3d`), use day-formatted dates
+(`YYYY-MM-DD`).
 
 Monthly three-factor data:
 
