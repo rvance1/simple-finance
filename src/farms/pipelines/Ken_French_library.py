@@ -178,6 +178,23 @@ def get_ff3d(start_date=None, end_date=None):
     df.index.name = "date"
     return df
 
+
+def get_ff5d(start_date=None, end_date=None):
+    """Return daily Fama-French five-factor data as decimal returns."""
+    result = _load_french_dataset(
+        "F-F_Research_Data_5_Factors_2x3_daily",
+        start_date,
+        end_date,
+    )
+
+    df = result[0].copy()
+    df = df.apply(pd.to_numeric, errors="coerce") / 100
+    if isinstance(df.index, pd.PeriodIndex):
+        df.index = df.index.to_timestamp()
+    df.index.freq = None
+    df.index.name = "date"
+    return df
+
 _DECILE_DETAILS = {
     "accruals": (
         "The portfolios are formed on accruals at the end of each June using NYSE breakpoints.",

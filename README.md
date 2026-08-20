@@ -50,6 +50,21 @@ ff3_daily = farms.get_ff3d("2025-01-01", "2025-12-31")
 print(ff3_daily.head())
 ```
 
+Daily five-factor data:
+
+```python
+ff5_daily = farms.get_ff5d("2025-01-01", "2025-12-31")
+print(ff5_daily.head())
+```
+
+The daily five-factor result contains `Mkt-RF`, `SMB`, `HML`, `RMW`, `CMA`,
+and `RF`. Dates are optional; supplying only `start_date` retrieves observations
+from that date through the latest available observation:
+
+```python
+ff5_daily = farms.get_ff5d(start_date="2025-01-01")
+```
+
 Monthly factor data use a pandas `PeriodIndex`. Daily factor data use a
 pandas `DatetimeIndex`.
 
