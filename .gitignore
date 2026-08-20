@@ -16,6 +16,7 @@ venv/
 .env
 
 # Other
+.DS_Store
 dev/
 testing/
 
