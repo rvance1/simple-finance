@@ -1,25 +1,26 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "farms"
-version = "0.1.17"
+version = "0.1.19"
 description = "Financial Analysis & Risk Management: A Python toolkit for loading financial data and performing regression and portfolio analysis for teaching and research."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Brian Boyer" }, { name = "Royston Vance" }]
 dependencies = [
-    "pandas>=2.2,<2.3",
+    "pandas>=2.2,<3",
+    "pandas-datareader>=0.11,<1",
     "requests>=2.32.4",
     "statsmodels>=0.14.5",
-    "yfinance>=0.2.66",
 ]
 
 [project.urls]
-Homepage = "https://github.com/rvance1/simple-finance"
-Issues = "https://github.com/rvance1/simple-finance/issues"
+Homepage = "https://github.com/boyerb/farms"
+Issues = "https://github.com/boyerb/farms/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -27,7 +28,6 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.6",
   "mypy>=1.0",
-  "wrds>=0.9.0",
 ]
 
 [tool.setuptools]
