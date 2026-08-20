@@ -167,14 +167,12 @@ def test_large_identifier_list_is_deduplicated_and_chunked(monkeypatch):
     )
 
     result = crsp.get_crsp_msf_by_ids(
-        _Database(), [1, 2, 1, 3], "2020-01", "2020-01", chunk_size=2,
+        _Database(), [1, 2, 3, 1], "2020-01", "2020-01", chunk_size=2,
         identifier_type="permno",
     )
 
     assert len(calls) == 2
-    values = [set(_values(call["params"])) for call in calls]
-    assert any({1, 2}.issubset(value) for value in values)
-    assert any(3 in value for value in values)
+    assert [call["params"][2:] for call in calls] == [[1, 2], [3]]
     assert list(result["permno"]) == [1, 3]
 
 

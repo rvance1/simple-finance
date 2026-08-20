@@ -70,6 +70,12 @@ _DECILE_DATASETS = {
     },
 }
 
+_DECILE_COLUMNS = [
+    "Lo 10",
+    *[f"Dec {number}" for number in range(2, 10)],
+    "Hi 10",
+]
+
 
 def _load_french_dataset(dataset, start_date=None, end_date=None):
     """Load a dataset from the Kenneth French Data Library."""
@@ -122,13 +128,14 @@ def _load_decile_returns(strategy, start_date=None, end_date=None):
     )
     table = result[config["table"]].copy()
 
-    if table.shape[1] < 10:
+    missing_columns = [column for column in _DECILE_COLUMNS if column not in table]
+    if missing_columns:
         raise ValueError(
-            f"{config['dataset']} table {config['table']} has fewer than "
-            "10 portfolio columns."
+            f"{config['dataset']} table {config['table']} is missing expected "
+            f"decile columns: {', '.join(missing_columns)}."
         )
 
-    deciles = table.iloc[:, -10:].copy()
+    deciles = table.loc[:, _DECILE_COLUMNS].copy()
     deciles.columns = [f"Dec {number}" for number in range(1, 11)]
     deciles = deciles.apply(pd.to_numeric, errors="coerce") / 100
     deciles.index.name = "date"
@@ -294,10 +301,13 @@ def _print_decile_details(metadata):
     )
 
 
-def _merge_decile_factors(deciles, factors=None):
+def _merge_decile_factors(deciles, factors=None, start_date=None, end_date=None):
     """Merge requested Fama-French factors into monthly decile returns."""
+    if factors not in {None, "FF3", "FF5"}:
+        raise ValueError("factors must be None, 'FF3', or 'FF5'.")
+
     if factors == "FF5":
-        factor_data = get_ff5().rename(
+        factor_data = get_ff5(start_date, end_date).rename(
             columns={
                 "Mkt-RF": "mkt-rf",
                 "SMB": "smb",
@@ -309,7 +319,7 @@ def _merge_decile_factors(deciles, factors=None):
         )
         factor_columns = ["mkt-rf", "smb", "hml", "rmw", "cma", "rf"]
     elif factors == "FF3":
-        factor_data = get_ff3().rename(
+        factor_data = get_ff3(start_date, end_date).rename(
             columns={
                 "Mkt-RF": "mkt-rf",
                 "SMB": "smb",
@@ -319,7 +329,7 @@ def _merge_decile_factors(deciles, factors=None):
         )
         factor_columns = ["mkt-rf", "smb", "hml", "rf"]
     else:
-        factor_data = get_ff3().rename(
+        factor_data = get_ff3(start_date, end_date).rename(
             columns={"Mkt-RF": "mkt-rf", "RF": "rf"}
         )
         factor_columns = ["mkt-rf", "rf"]
@@ -351,4 +361,4 @@ def get_ken_french_deciles(
         metadata = _get_decile_metadata(stype, deciles)
         _print_decile_details(metadata)
 
-    return _merge_decile_factors(deciles, factors)
+    return _merge_decile_factors(deciles, factors, start_date, end_date)

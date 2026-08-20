@@ -140,11 +140,12 @@ def test_load_decile_returns_normalizes_registered_strategy(monkeypatch, strateg
         "Qnt 2": [92.0, 93.0],
     }
     decile_columns = {
-        f"source {number}": [float(number), float(number + 10)]
-        for number in range(1, 11)
+        "Lo 10": [1.0, 11.0],
+        **{f"Dec {number}": [float(number), float(number + 10)] for number in range(2, 10)},
+        "Hi 10": [10.0, 20.0],
     }
     source = pd.DataFrame(
-        prefix_columns | decile_columns,
+        prefix_columns | decile_columns | {"not a decile": [99.0, 99.0]},
         index=pd.period_range("2020-01", "2020-02", freq="M"),
     )
     calls = []
@@ -315,7 +316,7 @@ def _sample_deciles():
     )
 
 
-def _sample_ff3():
+def _sample_ff3(start_date=None, end_date=None):
     """Create one month of predictable FF3 returns for merge tests."""
     return pd.DataFrame(
         {
@@ -328,7 +329,7 @@ def _sample_ff3():
     )
 
 
-def _sample_ff5():
+def _sample_ff5(start_date=None, end_date=None):
     """Create one month of predictable FF5 returns for merge tests."""
     result = _sample_ff3()
     result["RMW"] = -0.001
@@ -392,6 +393,45 @@ def test_public_decile_loader_merges_requested_factors(
     assert result.iloc[0]["Dec 1"] == pytest.approx(-0.02)
     assert result.iloc[0]["Dec 10"] == pytest.approx(0.07)
     assert result.iloc[0]["mkt-rf"] == pytest.approx(-0.01)
+
+
+@pytest.mark.parametrize("factors", [None, "FF3", "FF5"])
+def test_public_decile_loader_forwards_dates_to_factor_loader(monkeypatch, factors):
+    calls = []
+    monkeypatch.setattr(
+        french,
+        "_load_decile_returns",
+        lambda strategy, start_date=None, end_date=None: _sample_deciles(),
+    )
+
+    def fake_ff3(start_date=None, end_date=None):
+        calls.append(("FF3", start_date, end_date))
+        return _sample_ff3()
+
+    def fake_ff5(start_date=None, end_date=None):
+        calls.append(("FF5", start_date, end_date))
+        return _sample_ff5()
+
+    monkeypatch.setattr(french, "get_ff3", fake_ff3)
+    monkeypatch.setattr(french, "get_ff5", fake_ff5)
+
+    french.get_ken_french_deciles(
+        "momentum", "2020-01", "2020-02", factors=factors
+    )
+
+    expected_loader = "FF5" if factors == "FF5" else "FF3"
+    assert calls == [(expected_loader, "2020-01", "2020-02")]
+
+
+def test_public_decile_loader_rejects_invalid_factor_selection(monkeypatch):
+    monkeypatch.setattr(
+        french,
+        "_load_decile_returns",
+        lambda strategy, start_date=None, end_date=None: _sample_deciles(),
+    )
+
+    with pytest.raises(ValueError, match="factors must be None, 'FF3', or 'FF5'"):
+        french.get_ken_french_deciles("momentum", factors="FF4")
 
 
 def test_public_decile_loader_lists_strategies_without_downloading(capsys):
